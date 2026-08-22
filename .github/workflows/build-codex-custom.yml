@@ -1,0 +1,39 @@
+name: Build codex-custom
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-arm64:
+    runs-on: blacksmith-6vcpu-macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.95.0
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            codex-rs/target
+          key: macos-arm64-cargo-${{ hashFiles('codex-rs/Cargo.lock') }}
+          restore-keys: macos-arm64-cargo-
+
+      - name: Build
+        working-directory: codex-rs
+        run: cargo build --release --bin codex
+
+      - name: Stage binary
+        run: cp codex-rs/target/release/codex codex-custom-aarch64-apple-darwin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codex-custom-aarch64-apple-darwin
+          path: codex-custom-aarch64-apple-darwin
+          retention-days: 7
